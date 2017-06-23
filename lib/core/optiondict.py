@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 """
-Copyright (c) 2006-2015 sqlmap developers (http://sqlmap.org/)
+Copyright (c) 2006-2017 sqlmap developers (http://sqlmap.org/)
 See the file 'doc/COPYING' for copying permission
 """
 
@@ -37,11 +37,14 @@ optDict = {
                                "headers":           "string",
                                "authType":          "string",
                                "authCred":          "string",
-                               "authPrivate":       "string",
+                               "authFile":          "string",
+                               "ignore401":         "boolean",
+                               "ignoreProxy":       "boolean",
+                               "ignoreRedirects":   "boolean",
+                               "ignoreTimeouts":    "boolean",
                                "proxy":             "string",
                                "proxyCred":         "string",
                                "proxyFile":         "string",
-                               "ignoreProxy":       "boolean",
                                "tor":               "boolean",
                                "torPort":           "integer",
                                "torType":           "string",
@@ -74,6 +77,7 @@ optDict = {
                                "testParameter":     "string",
                                "skip":              "string",
                                "skipStatic":        "boolean",
+                               "paramExclude":      "string",
                                "dbms":              "string",
                                "dbmsCred":          "string",
                                "os":                "string",
@@ -104,7 +108,7 @@ optDict = {
                                "uCols":             "string",
                                "uChar":             "string",
                                "uFrom":             "string",
-                               "dnsName":           "string",
+                               "dnsDomain":         "string",
                                "secondOrder":       "string",
                              },
 
@@ -136,6 +140,7 @@ optDict = {
                                "tbl":               "string",
                                "col":               "string",
                                "excludeCol":        "string",
+                               "pivotColumn":       "string",
                                "dumpWhere":         "string",
                                "user":              "string",
                                "excludeSysDbs":     "boolean",
@@ -189,7 +194,9 @@ optDict = {
                                #"xmlFile":           "string",
                                "trafficFile":       "string",
                                "batch":             "boolean",
+                               "binaryFields":      "string",
                                "charset":           "string",
+                               "checkInternet":     "boolean",
                                "crawlDepth":        "integer",
                                "crawlExclude":      "string",
                                "csvDel":            "string",
@@ -201,15 +208,14 @@ optDict = {
                                "hexConvert":        "boolean",
                                "outputDir":         "string",
                                "parseErrors":       "boolean",
-                               "pivotColumn":       "string",
-                               "saveCmdline":       "boolean",
+                               "saveConfig":        "string",
                                "scope":             "string",
                                "testFilter":        "string",
+                               "testSkip":          "string",
                                "updateAll":         "boolean",
                              },
 
             "Miscellaneous": {
-                               "mnemonics":         "string",
                                "alert":             "string",
                                "answers":           "string",
                                "beep":              "boolean",
@@ -217,24 +223,31 @@ optDict = {
                                "dependencies":      "boolean",
                                "disableColoring":   "boolean",
                                "googlePage":        "integer",
+                               "identifyWaf":       "boolean",
                                "mobile":            "boolean",
-                               "pageRank":          "boolean",
+                               "offline":           "boolean",
                                "purgeOutput":       "boolean",
+                               "skipWaf":           "boolean",
                                "smart":             "boolean",
+                               "tmpDir":            "string",
+                               "webRoot":           "string",
                                "wizard":            "boolean",
                                "verbose":           "integer",
                              },
             "Hidden": {
                                "dummy":             "boolean",
-                               "binaryFields":      "string",
+                               "disablePrecon":     "boolean",
                                "profile":           "boolean",
-                               "cpuThrottle":       "integer",
                                "forceDns":          "boolean",
-                               "identifyWaf":       "boolean",
-                               "ignore401":         "boolean",
+                               "murphyRate":        "integer",
                                "smokeTest":         "boolean",
                                "liveTest":          "boolean",
                                "stopFail":          "boolean",
                                "runCase":           "string",
+                      },
+            "API": {
+                               "api":               "boolean",
+                               "taskid":            "string",
+                               "database":          "string",
                       }
           }
