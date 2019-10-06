@@ -1,29 +1,33 @@
 #!/usr/bin/env python
 
 """
-Copyright (c) 2006-2017 sqlmap developers (http://sqlmap.org/)
-See the file 'doc/COPYING' for copying permission
+Copyright (c) 2006-2019 sqlmap developers (http://sqlmap.org/)
+See the file 'LICENSE' for copying permission
 """
 
-import httplib
+from __future__ import division
+
 import os
 import re
-import urlparse
 import tempfile
 import time
 
 from lib.core.common import checkSameHost
 from lib.core.common import clearConsoleLine
 from lib.core.common import dataToStdout
+from lib.core.common import extractRegexResult
 from lib.core.common import findPageForms
 from lib.core.common import getSafeExString
 from lib.core.common import openFile
 from lib.core.common import readInput
 from lib.core.common import safeCSValue
 from lib.core.common import urldecode
+from lib.core.compat import xrange
+from lib.core.convert import htmlUnescape
 from lib.core.data import conf
 from lib.core.data import kb
 from lib.core.data import logger
+from lib.core.datatype import OrderedSet
 from lib.core.enums import MKSTEMP_PREFIX
 from lib.core.exception import SqlmapConnectionException
 from lib.core.exception import SqlmapSyntaxException
@@ -32,14 +36,16 @@ from lib.core.threads import getCurrentThreadData
 from lib.core.threads import runThreads
 from lib.parse.sitemap import parseSitemap
 from lib.request.connect import Connect as Request
+from thirdparty import six
 from thirdparty.beautifulsoup.beautifulsoup import BeautifulSoup
-from thirdparty.oset.pyoset import oset
+from thirdparty.six.moves import http_client as _http_client
+from thirdparty.six.moves import urllib as _urllib
 
 def crawl(target):
     try:
         visited = set()
         threadData = getCurrentThreadData()
-        threadData.shared.value = oset()
+        threadData.shared.value = OrderedSet()
 
         def crawlThread():
             threadData = getCurrentThreadData()
@@ -63,22 +69,22 @@ def crawl(target):
                 try:
                     if current:
                         content = Request.getPage(url=current, crawling=True, raise404=False)[0]
-                except SqlmapConnectionException, ex:
-                    errMsg = "connection exception detected (%s). skipping " % getSafeExString(ex)
+                except SqlmapConnectionException as ex:
+                    errMsg = "connection exception detected ('%s'). skipping " % getSafeExString(ex)
                     errMsg += "URL '%s'" % current
                     logger.critical(errMsg)
                 except SqlmapSyntaxException:
                     errMsg = "invalid URL detected. skipping '%s'" % current
                     logger.critical(errMsg)
-                except httplib.InvalidURL, ex:
-                    errMsg = "invalid URL detected (%s). skipping " % getSafeExString(ex)
+                except _http_client.InvalidURL as ex:
+                    errMsg = "invalid URL detected ('%s'). skipping " % getSafeExString(ex)
                     errMsg += "URL '%s'" % current
                     logger.critical(errMsg)
 
                 if not kb.threadContinue:
                     break
 
-                if isinstance(content, unicode):
+                if isinstance(content, six.text_type):
                     try:
                         match = re.search(r"(?si)<html[^>]*>(.+)</html>", content)
                         if match:
@@ -87,8 +93,7 @@ def crawl(target):
                         soup = BeautifulSoup(content)
                         tags = soup('a')
 
-                        if not tags:
-                            tags = re.finditer(r'(?i)<a[^>]+href="(?P<href>[^>"]+)"', content)
+                        tags += re.finditer(r'(?i)\b(href|src)=["\'](?P<href>[^>"\']+)', content)
 
                         for tag in tags:
                             href = tag.get("href") if hasattr(tag, "get") else tag.group("href")
@@ -96,7 +101,7 @@ def crawl(target):
                             if href:
                                 if threadData.lastRedirectURL and threadData.lastRedirectURL[0] == threadData.lastRequestUID:
                                     current = threadData.lastRedirectURL[1]
-                                url = urlparse.urljoin(current, href)
+                                url = _urllib.parse.urljoin(current, htmlUnescape(href))
 
                                 # flag to know if we are dealing with the same target host
                                 _ = checkSameHost(url, target)
@@ -107,14 +112,14 @@ def crawl(target):
                                 elif not _:
                                     continue
 
-                                if url.split('.')[-1].lower() not in CRAWL_EXCLUDE_EXTENSIONS:
+                                if (extractRegexResult(r"\A[^?]+\.(?P<result>\w+)(\?|\Z)", url) or "").lower() not in CRAWL_EXCLUDE_EXTENSIONS:
                                     with kb.locks.value:
                                         threadData.shared.deeper.add(url)
                                         if re.search(r"(.*?)\?(.+)", url):
                                             threadData.shared.value.add(url)
-                    except ValueError:          # for non-valid links
-                        pass
                     except UnicodeEncodeError:  # for non-HTML files
+                        pass
+                    except ValueError:          # for non-valid links
                         pass
                     finally:
                         if conf.forms:
@@ -135,10 +140,10 @@ def crawl(target):
             if readInput(message, default='N', boolean=True):
                 found = True
                 items = None
-                url = urlparse.urljoin(target, "/sitemap.xml")
+                url = _urllib.parse.urljoin(target, "/sitemap.xml")
                 try:
                     items = parseSitemap(url)
-                except SqlmapConnectionException, ex:
+                except SqlmapConnectionException as ex:
                     if "page not found" in getSafeExString(ex):
                         found = False
                         logger.warn("'sitemap.xml' not found")
@@ -167,7 +172,7 @@ def crawl(target):
             if not conf.bulkFile:
                 logger.info("searching for links with depth %d" % (i + 1))
 
-            runThreads(numThreads, crawlThread, threadChoice=(i>0))
+            runThreads(numThreads, crawlThread, threadChoice=(i > 0))
             clearConsoleLine(True)
 
             if threadData.shared.deeper:

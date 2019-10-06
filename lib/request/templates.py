@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
 """
-Copyright (c) 2006-2017 sqlmap developers (http://sqlmap.org/)
-See the file 'doc/COPYING' for copying permission
+Copyright (c) 2006-2019 sqlmap developers (http://sqlmap.org/)
+See the file 'LICENSE' for copying permission
 """
 
 from lib.core.data import kb
@@ -19,4 +19,3 @@ def getPageTemplate(payload, place):
         retVal = kb.pageTemplates[(payload, place)]
 
     return retVal
-
